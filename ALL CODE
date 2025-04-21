@@ -1,0 +1,413 @@
+1. Code
+import tensorflow as tf
+from tensorflow.keras.models import Sequential
+from tensorflow.keras.layers import Dense, Flatten
+from tensorflow.keras.datasets import mnist
+from tensorflow.keras.utils import to_categorical
+
+# Load the MNIST dataset (train and test data)
+(x_train, y_train), (x_test, y_test) = mnist.load_data()
+
+# Normalize the input data to [0, 1]
+x_train, x_test = x_train / 255.0, x_test / 255.0
+
+# One-hot encode the labels (e.g., 3 -> [0, 0, 0, 1, 0, 0, 0, 0, 0, 0])
+y_train = to_categorical(y_train, 10)
+y_test = to_categorical(y_test, 10)
+
+# Build the feedforward neural network model
+model = Sequential([
+    Flatten(input_shape=(28, 28)),     # Flatten 28x28 images to 784-dimensional vector
+    Dense(128, activation='relu'),     # First hidden layer with 128 neurons
+    Dense(64, activation='relu'),      # Second hidden layer with 64 neurons
+    Dense(10, activation='softmax')    # Output layer with 10 neurons (one per class)
+])
+
+# Compile the model
+model.compile(
+    optimizer='adam',
+    loss='categorical_crossentropy',
+    metrics=['accuracy']
+
+
+# Train the model
+model.fit(x_train, y_train, epochs=5, batch_size=32, validation_split=0.1)
+
+# Evaluate the model
+test_loss, test_acc = model.evaluate(x_test, y_test)
+print(f"\nTest Accuracy: {test_acc:.4f}")
+
+
+Practical code 2
+import tensorflow as tf
+from tensorflow.keras import layers, models
+import pandas as pd
+from sklearn.model_selection import train_test_split
+from sklearn.preprocessing import LabelEncoder
+from tensorflow.keras.utils import to_categorical
+
+# 1. Load the OCR Letter Recognition Dataset (in CSV format)
+data = pd.read_csv("C:\\Users\\omman\\letter-recognition.csv")
+
+# 2. Split the data into features (X) and labels (y)
+X = data.drop('letter', axis=1).values  # Features: All columns except the 'letter' column
+y = data['letter'].values  # Target: The 'letter' column
+
+# 3. Normalize the features (scale pixel values to range [0, 1])
+X = X / 255.0
+
+# 4. Convert labels to numeric values using LabelEncoder
+encoder = LabelEncoder()
+y_encoded = encoder.fit_transform(y)
+
+# 5. One-hot encode the labels
+y_one_hot = to_categorical(y_encoded, num_classes=26)
+
+# 6. Split the dataset into training and testing sets
+X_train, X_test, y_train, y_test = train_test_split(X, y_one_hot, test_size=0.2, random_state=42)
+
+# 7. Build a simple DNN model
+model = models.Sequential([
+    layers.Dense(128, activation='relu', input_shape=(X_train.shape[1],)),  # Input layer
+    layers.Dense(64, activation='relu'),  # Hidden layer
+    layers.Dense(26, activation='softmax')  # Output layer (26 classes for A-Z)
+])
+
+# 8. Compile the model
+model.compile(optimizer='adam', loss='categorical_crossentropy', metrics=['accuracy'])
+
+# 9. Train the model
+model.fit(X_train, y_train, epochs=10, batch_size=64, validation_split=0.2)
+
+# 10. Evaluate the model on the test set
+test_loss, test_acc = model.evaluate(X_test, y_test)
+print(f"Test accuracy: {test_acc}")
+
+# 11. Make predictions on the test set
+predictions = model.predict(X_test)
+
+# 12. Print the first 5 predictions
+for i in range(5):
+    predicted_label = encoder.inverse_transform([predictions[i].argmax()])[0]
+    actual_label = encoder.inverse_transform([y_test[i].argmax()])[0]
+    print(f"Predicted: {predicted_label}, Actual: {actual_label}")
+
+practical 3
+import tensorflow as tf
+from tensorflow.keras.models import Sequential
+from tensorflow.keras.layers import Dense, Embedding, LSTM, Bidirectional, Dropout
+from tensorflow.keras.preprocessing.sequence import pad_sequences
+from tensorflow.keras.datasets import imdb
+vocb_length = 10000
+max_length = 200
+(x_train,y_train),(x_test,y_test) = imdb.load_data( num_words=vocb_length)
+x_train = pad_sequences(x_train, maxlen=max_length, padding='post',truncating='post')
+x_test = pad_sequences(x_test,maxlen = max_length,padding='post',truncating='post')
+model = Sequential([
+    Embedding(vocb_length,128,input_length = max_length),
+    Bidirectional(LSTM(64, return_sequences=False)),
+    Dropout(0.3),
+    Dense(64, activation='relu'),
+    Dropout(0.3),
+    Dense(1, activation='sigmoid')
+    
+])
+model.compile(optimizer='adam',loss='binary_crossentropy',metrics=['accuracy'])
+history = model.fit(x_train,y_train,batch_size=32,epochs=10, validation_split=0.2,verbose=1)
+
+practical 4
+import tensorflow as tf
+from tensorflow.keras import layers, models
+from tensorflow.keras.datasets import mnist
+import matplotlib.pyplot as plt
+
+# 1. Load the MNIST dataset
+(x_train, y_train), (x_test, y_test) = mnist.load_data()
+
+# 2. Preprocess the data
+# Normalize pixel values to [0, 1]
+x_train = x_train / 255.0
+x_test = x_test / 255.0
+
+# Add a channel dimension for CNN input (grayscale images have 1 channel)
+x_train = x_train[..., tf.newaxis]
+x_test = x_test[..., tf.newaxis]
+
+# Convert labels to one-hot encoding
+y_train = tf.keras.utils.to_categorical(y_train, 10)
+y_test = tf.keras.utils.to_categorical(y_test, 10)
+
+# 3. Build the CNN model
+model = models.Sequential([
+    layers.Conv2D(32, (3, 3), activation='relu', input_shape=(28, 28, 1)),
+    layers.MaxPooling2D((2, 2)),
+    layers.Conv2D(64, (3, 3), activation='relu'),
+    layers.MaxPooling2D((2, 2)),
+    layers.Flatten(),
+    layers.Dense(128, activation='relu'),
+    layers.Dense(10, activation='softmax')  # 10 classes for digits 0-9
+])
+
+# 4. Compile the model
+model.compile(optimizer='adam',
+              loss='categorical_crossentropy',
+              metrics=['accuracy'])
+
+# 5. Train the model
+history = model.fit(x_train, y_train, epochs=5, batch_size=32, validation_split=0.1)
+
+# 6. Evaluate the model on the test data
+loss, accuracy = model.evaluate(x_test, y_test)
+print(f"Test Accuracy: {accuracy * 100:.2f}%")
+
+# 7. Plot training history
+plt.figure(figsize=(10, 5))
+
+# Plot Accuracy
+plt.subplot(1, 2, 1)
+plt.plot(history.history['accuracy'], label='Training Accuracy')
+plt.plot(history.history['val_accuracy'], label='Validation Accuracy')
+plt.xlabel('Epochs')
+plt.ylabel('Accuracy')
+plt.legend()
+plt.title('Training vs Validation Accuracy')
+
+# Plot Loss
+plt.subplot(1, 2, 2)
+plt.plot(history.history['loss'], label='Training Loss')
+plt.plot(history.history['val_loss'], label='Validation Loss')
+plt.xlabel('Epochs')
+plt.ylabel('Loss')
+plt.legend()
+plt.title('Training vs Validation Loss')
+
+plt.tight_layout()
+plt.show()
+
+prcatical 5
+import numpy as np
+import tensorflow as tf
+from tensorflow.keras.datasets import imdb
+from tensorflow.keras.models import Sequential
+from tensorflow.keras.layers import Embedding, LSTM, Dense
+from tensorflow.keras.preprocessing.sequence import pad_sequences
+
+# 1. Load IMDB dataset (binary sentiment: 0 = negative, 1 = positive)
+(x_train, y_train), (x_test, y_test) = imdb.load_data(num_words=10000)
+
+# 2. Pad sequences to ensure uniform input size
+x_train = pad_sequences(x_train, padding='post', maxlen=500)  # Padding to 500 words
+x_test = pad_sequences(x_test, padding='post', maxlen=500)
+
+# 3. Build a simple RNN model with LSTM for binary classification
+model = Sequential()
+model.add(Embedding(input_dim=10000, output_dim=128, input_length=500))  # Embedding layer for word vectors
+model.add(LSTM(128, dropout=0.2, recurrent_dropout=0.2))  # LSTM layer
+model.add(Dense(1, activation='sigmoid'))  # Output layer for binary classification
+
+# 4. Compile the model
+model.compile(loss='binary_crossentropy', optimizer='adam', metrics=['accuracy'])
+
+# 5. Train the model
+model.fit(x_train, y_train, epochs=3, batch_size=64, validation_data=(x_test, y_test))
+
+# 6. Evaluate the model
+score, accuracy = model.evaluate(x_test, y_test, batch_size=64)
+print(f"Test accuracy: {accuracy:.4f}")
+
+# 7. Predict sentiment for a new review
+new_review = "I love this movie, it was amazing!"
+new_review_tokens = [imdb.get_word_index().get(word, 0) for word in new_review.split()]  # Tokenizing the new review
+new_review_padded = pad_sequences([new_review_tokens], maxlen=500)  # Padding to match the model input size
+
+# Predict sentiment (0 = negative, 1 = positive)
+prediction = model.predict(new_review_padded)
+sentiment = "Positive" if prediction >= 0.5 else "Negative"  # If prediction >= 0.5, it's positive
+
+print(f"Predicted sentiment: {sentiment}")
+
+
+MLOPS
+
+2 practical 
+import numpy as np
+import tensorflow as tf
+from tensorflow.keras.datasets import imdb
+from tensorflow.keras.models import Sequential
+from tensorflow.keras.layers import Embedding, LSTM, Dense
+from tensorflow.keras.preprocessing.sequence import pad_sequences
+
+# 1. Load IMDB dataset (binary sentiment: 0 = negative, 1 = positive)
+(x_train, y_train), (x_test, y_test) = imdb.load_data(num_words=10000)
+
+# 2. Pad sequences to ensure uniform input size
+x_train = pad_sequences(x_train, padding='post', maxlen=500)  # Padding to 500 words
+x_test = pad_sequences(x_test, padding='post', maxlen=500)
+
+# 3. Build a simple RNN model with LSTM for binary classification
+model = Sequential()
+model.add(Embedding(input_dim=10000, output_dim=128, input_length=500))  # Embedding layer for word vectors
+model.add(LSTM(128, dropout=0.2, recurrent_dropout=0.2))  # LSTM layer
+model.add(Dense(1, activation='sigmoid'))  # Output layer for binary classification
+
+# 4. Compile the model
+model.compile(loss='binary_crossentropy', optimizer='adam', metrics=['accuracy'])
+
+# 5. Train the model
+model.fit(x_train, y_train, epochs=3, batch_size=64, validation_data=(x_test, y_test))
+
+# 6. Evaluate the model
+score, accuracy = model.evaluate(x_test, y_test, batch_size=64)
+print(f"Test accuracy: {accuracy:.4f}")
+
+# 7. Predict sentiment for a new review
+new_review = "I love this movie, it was amazing!"
+new_review_tokens = [imdb.get_word_index().get(word, 0) for word in new_review.split()]  # Tokenizing the new review
+new_review_padded = pad_sequences([new_review_tokens], maxlen=500)  # Padding to match the model input size
+
+# Predict sentiment (0 = negative, 1 = positive)
+prediction = model.predict(new_review_padded)
+sentiment = "Positive" if prediction >= 0.5 else "Negative"  # If prediction >= 0.5, it's positive
+
+print(f"Predicted sentiment: {sentiment}")
+
+3 . practicLE
+
+[1]:
+
+[2]:
+
+[5]:
+
+[7]:
+
+[8]:
+
+[9]:
+
+11]:
+
+12]:
+
+12]:
+
+from sklearn.datasets import load_iris
+
+from sklearn.model_selection import train_test_split
+from sklearn. tree import DecisionTreeClassifier
+import joblib
+
+iris = load_iris()
+
+x = iris.data
+
+y = iris.target
+
+x_train,x_test,y_train,y_test = train_test_split(x,y, random_state=42)
+
+model = DecisionTreeClassifier(max_depth = 2)
+
+model.fit(x_train,y_train)
+
+DecisionTreeClassifier
+
+DecisionTreeClassifier(max_depth=2)
+
+13]:
+
+13]:
+
+14]:
+
+15]:
+
+19]:
+
+joblib.dump(model,'model.pkl')
+
+['model.pkl']
+
+loaded_model = joblib. load('model.pkl')
+
+accuracy = loaded_model.score(x_test,y_test)
+
+print("Accuracy is " , accuracy)
+
+Accuracy is 0.9736842105263158
+
+[ ]:
+
+PRACTICLE 45
+import pandas as pd
+import seaborn as sns
+import matplotlib.pyplot as plt
+from sklearn.model_selection import train_test_split
+from sklearn.linear_model import LogisticRegression
+from sklearn.metrics import classification_report, accuracy_score
+
+# Load dataset (Wine dataset from sklearn)
+from sklearn.datasets import load_wine
+data = load_wine()
+X = pd.DataFrame(data.data, columns=data.feature_names)
+y = pd.Series(data.target, name='target')
+df = X.copy()
+df['target'] = y
+
+# Exploratory Data Analysis (EDA)
+print("\n--- Dataset Info ---")
+print(df.info())
+
+print("\n--- Summary Statistics ---")
+print(df.describe())
+
+# Check for null values
+print("\n--- Null Values ---")
+print(df.isnull().sum())
+
+# Correlation heatmap
+plt.figure(figsize=(10, 8))
+sns.heatmap(df.corr(), annot=True, cmap='coolwarm')
+plt.title("Feature Correlation Heatmap")
+plt.tight_layout()
+plt.savefig("correlation_heatmap.png")
+plt.show()
+
+# Distribution of target variable
+sns.countplot(x='target', data=df)
+plt.title("Target Class Distribution")
+plt.savefig("target_distribution.png")
+plt.show()
+
+# Boxplot for outlier detection
+plt.figure(figsize=(12, 6))
+sns.boxplot(data=df.drop(columns='target'))
+plt.xticks(rotation=90)
+plt.title("Boxplot of Features")
+plt.savefig("boxplot_features.png")
+plt.show()
+
+# Data Preprocessing (no nulls, so minimal here)
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
+
+# Train a simple model
+model = LogisticRegression(max_iter=1000)
+model.fit(X_train, y_train)
+y_pred = model.predict(X_test)
+
+# Model Evaluation
+print("\n--- Classification Report ---")
+print(classification_report(y_test, y_pred))
+print("Accuracy:", accuracy_score(y_test, y_pred))
+
+# Save model (optional if needed later)
+import joblib
+joblib.dump(model, "wine_logistic_model.pkl")
+
+# Save environment dependencies (to be run in terminal)
+# pip freeze > requirements.txt
+
+# To convert notebook to PDF report (to be run in terminal or script):
+# jupyter nbconvert --to pdf your_notebook_name.ipynb
+
+# Upload this notebook and all saved files to GitHub
+print("\nPipeline and EDA complete. Visualizations and model saved.")
